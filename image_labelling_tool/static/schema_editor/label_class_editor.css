@@ -1,0 +1,89 @@
+div.colour_scheme_panel {
+    border: 1px solid #c0c0c0;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+div.colour_scheme_panel_header {
+    padding: 10px;
+    background: #4c974c;
+    border: 1px solid #408040;
+    border-radius: inherit;
+    color: #ffffff;
+}
+
+div.colour_scheme_panel_body {
+    padding: 10px;
+}
+
+
+
+.editor_card_toolbar {
+    position: absolute;
+}
+
+.editor_card_toolbar button {
+    padding: 7px;
+}
+
+.after_editor_card_toolbar {
+    margin-left: 75px;
+}
+
+table.class_labels_table {
+    border: 1px solid #c0c0c0;
+    border-spacing: 0;
+}
+
+table.class_labels_table thead tr {
+    background: #dcdcdc;
+    color: #202020;
+}
+
+table.class_labels_table thead tr td {
+    border-bottom: 1px solid #cccccc;
+}
+
+table.class_labels_table tbody tr:nth-child(even) {
+    background: #f4f4f4;
+}
+
+table.class_labels_table tbody td {
+    color: #606060;
+}
+
+table.class_labels_table td {
+    padding: 1px 5px;
+}
+
+input.unsaved {
+    background-color: #ffe0e0;
+}
+
+
+table.colour_scheme_table {
+    border: 1px solid #c0c0c0;
+    border-spacing: 0;
+}
+
+table.colour_scheme_table thead tr {
+    background: #dcdcdc;
+    color: #202020;
+}
+
+table.colour_scheme_table thead tr td {
+    border-bottom: 1px solid #cccccc;
+}
+
+table.colour_scheme_table tbody tr:nth-child(even) {
+    background: #f4f4f4;
+}
+
+table.colour_scheme_table tbody td {
+    color: #606060;
+}
+
+table.colour_scheme_table td {
+    padding: 1px 5px;
+}
+
