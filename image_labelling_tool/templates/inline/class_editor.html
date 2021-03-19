@@ -6,67 +6,62 @@
 
 
 {% if show_colour_scheme_editor %}
-    <div class="colour_scheme_container card m-3">
-        <div class="card-header bg-secondary text-white">Colour schemes</div>
-        <div class="card-body">
-            <div class="card">
-                <div class="card-body">
-                    <div class="editor_card_toolbar">
-                        <button class="new_colour_scheme_button btn btn-warning ui-icon-plus" data-toggle="modal" data-target="#colour_scheme_create_form">New</button>
-                    </div>
-
-                    <table class="colour_scheme_table after_editor_card_toolbar">
-                        <thead>
-                            <tr>
-                                <td>Enabled</td>
-                                <td>Name</td>
-                                <td>Name in UI</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for col_scheme in colour_schemes %}
-                                <tr class="colour_scheme_row" data-scheme-id="{{ col_scheme.id }}">
-                                    <td>
-                                        <input class="input_lcls_active" type="checkbox" {% if col_scheme.active %}checked{% endif %}/>
-                                    </td>
-                                    <td>{{ col_scheme.id_name }}</td>
-                                    <td>
-                                        <input class="input_lcls_name" type="text" value="{{ col_scheme.human_name }}"/>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    <div class="schema_panel colour_scheme_panel shadow">
+        <div class="scheme_panel_header colour_scheme_panel_header shadow-sm">Colour schemes</div>
+        <div class="scheme_panel_body">
+            <div class="editor_card_toolbar">
+                <button class="new_colour_scheme_button btn btn-warning btn-sm shadow" data-toggle="modal" data-target="#colour_scheme_create_form">New</button>
             </div>
+
+            <table class="colour_scheme_table after_editor_card_toolbar shadow">
+                <thead>
+                    <tr>
+                        <td>Enabled</td>
+                        <td>Name</td>
+                        <td>Name in UI</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for col_scheme in colour_schemes %}
+                        <tr class="colour_scheme_row" data-scheme-id="{{ col_scheme.id }}">
+                            <td>
+                                <input class="input_lcls_active" type="checkbox" {% if col_scheme.active %}checked{% endif %}/>
+                            </td>
+                            <td>{{ col_scheme.id_name }}</td>
+                            <td>
+                                <input class="input_lcls_name" type="text" value="{{ col_scheme.human_name }}"/>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
     </div>
 
 {% endif %}
 
-<div class="group_container card  m-3">
-    <div class="card-header bg-primary text-white">Label classes by group</div>
+<div class="group_container schema_panel classes_panel shadow">
+    <div class="scheme_panel_header classes_panel_header shadow-sm">Label classes by group</div>
     {% for group in groups %}
-        <div class="card-body">
-            <div class="card group_panel" data-group-id="{{ group.id }}">
-                <div class="card-body {% if not group.active %}bg-light{% endif %}">
-                    <h6 class="card-subtitle {% if not group.active %}text-muted{% endif %}">
-                        <div class="editor_card_toolbar">Group:</div>
-                        <div class="after_editor_card_toolbar">
-                            <input class="input_group_name" type="text" value="{{ group.human_name }}"/>
-                            <input class="input_group_active" type="checkbox" {% if group.active %}checked{% endif %}/> Enabled
-                        </div>
-                    </h6>
-                    <br/>
+        <div class="scheme_panel_body">
+            <div class="schema_sub_panel group_panel shadow-sm" data-group-id="{{ group.id }}">
+                <div class="scheme_sub_panel_header group_panel_header {% if not group.active %}text-muted{% endif %} shadow-sm">
+                    <span class="oi oi-menu"></span> Group:
+                    <input class="input_group_name" type="text" value="{{ group.human_name }}"/>
+                    <input class="input_group_active" type="checkbox" {% if group.active %}checked{% endif %}/> Enabled
+                </div>
+
+                <div class="scheme_panel_body">
 
                     <div class="editor_card_toolbar">
-                        <button class="new_label_class_button btn btn-success ui-icon-plus" data-toggle="modal" data-target="#label_class_create_form">New</button>
+                        <button class="new_label_class_button btn btn-success btn-sm shadow" data-toggle="modal" data-target="#label_class_create_form">New</button>
                     </div>
 
-                    <table class="class_labels_table after_editor_card_toolbar">
+                    <table class="class_labels_table after_editor_card_toolbar shadow">
                         <thead>
                             <tr>
+                                <td></td>
                                 <td>Enabled</td>
                                 <td>Name</td>
                                 <td>Name in UI</td>
@@ -80,6 +75,9 @@
                                 {% for lcls in group.label_classes_in_order %}
                                     <tr class="lcls_row" data-lcls-id="{{ lcls.id }}">
                                         <td>
+                                            <span class="oi oi-menu"></span>
+                                        </td>
+                                        <td>
                                             <input class="input_lcls_active" type="checkbox" {% if lcls.active %}checked{% endif %}/>
                                         </td>
                                         <td>{{ lcls.id_name }}</td>
@@ -88,23 +86,24 @@
                                         </td>
                                         <td class="lcls_colour" data-colour-scheme="default">
                                             <input class="input_lcls_colour_picker" type='text' data-colour="{{ lcls.default_colour }}"/>
-                                            <input class="input_lcls_colour_text" type='text' value="{{ lcls.default_colour }}"/>
+                                            <input class="input_lcls_colour_text colour_input" type='text' value="{{ lcls.default_colour }}"/>
                                         </td>
                                         {% for scheme_colour in lcls.scheme_colours.all %}
                                             <td class="lcls_colour" data-colour-scheme="{{ scheme_colour.scheme.id_name }}">
                                                 <input class="input_lcls_colour_picker" type='text' data-colour="{{ scheme_colour.colour }}"/>
-                                                <input class="input_lcls_colour_text" type='text' value="{{ scheme_colour.colour }}"/>
+                                                <input class="input_lcls_colour_text colour_input" type='text' value="{{ scheme_colour.colour }}"/>
                                             </td>
                                         {% endfor %}
                                     </tr>
                                 {% endfor %}
                         </tbody>
                     </table>
+
                 </div>
             </div>
         </div>
     {% endfor %}
-    <p><button id="new_label_class_group_button" class="btn btn-success" style="margin-left: 1em;" data-toggle="modal" data-target="#group_create_form">New label group</button></p>
+    <p><button id="new_label_class_group_button" class="btn btn-primary btn-sm shadow" style="margin-left: 1em;" data-toggle="modal" data-target="#group_create_form">New label group</button></p>
 </div>
 
 

@@ -34,30 +34,25 @@
 
     <body>
 
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url "example_labeller:home" %}">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Class editor</li>
-        </ol>
-    </nav>
+        <div class="container">
+
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url "example_labeller:home" %}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Class editor</li>
+                </ol>
+            </nav>
 
 
-    <h1>UEA Computer Vision - Labelling Tool example Django App - class editor</h1>
+            <h1>UEA Computer Vision - Labelling Tool example Django App - class editor</h1>
 
 
-    {% url 'example_labeller:class_editor$' as class_editor_url %}
-    {% url 'example_labeller:class_editor_update' as update_url %}
-    {% url 'example_labeller:class_editor_form' as form_url %}
+            {% url 'example_labeller:class_editor$' as class_editor_url %}
+            {% url 'example_labeller:class_editor_update' as update_url %}
+            {% url 'example_labeller:class_editor_form' as form_url %}
 
-    {% class_editor colour_schemes groups update_url form_url class_editor_url %}
-
-    <h4>Labelling tool</h4>
-
-    <p><a href="{% url "example_labeller:home" %}">Labelling tool</a>.</body>
-
-
-    <h4>Admin</h4>
-    <p>The Django admin system can be found <a href="/admin">here</a>.</p>
+            {% class_editor colour_schemes groups update_url form_url class_editor_url %}
+        </div>
 
     </body>
 </html>

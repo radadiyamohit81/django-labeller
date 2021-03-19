@@ -1,19 +1,77 @@
+/*
+Panels
+ */
+div.schema_panel {
+    border-radius: 0.5em;
+    margin-bottom: 1.5em;
+    /*box-shadow: 0 .25rem .5rem rgba(0,0,0,.075)!important;*/
+}
+
+div.scheme_panel_header {
+    padding: 5px 12px;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+div.scheme_panel_body {
+    padding: 0.75em;
+}
+
+/*
+Sub-panels
+ */
+div.schema_sub_panel {
+    border-radius: 0.25em;
+    /*box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;*/
+}
+
+div.scheme_sub_panel_header {
+    padding: 4px 10px;
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+
+
+
+/*
+Colour schemas
+ */
+
 div.colour_scheme_panel {
     border: 1px solid #c0c0c0;
-    border-radius: 10px;
-    margin-bottom: 20px;
 }
 
 div.colour_scheme_panel_header {
-    padding: 10px;
-    background: #4c974c;
-    border: 1px solid #408040;
-    border-radius: inherit;
-    color: #ffffff;
+    background: #ffe636;
+    border-bottom: 1px solid #efd51a;
 }
 
-div.colour_scheme_panel_body {
-    padding: 10px;
+
+/*
+Label classes
+ */
+
+div.classes_panel {
+    border: 1px solid #c0c0c0;
+}
+
+div.classes_panel_header {
+    background: #b9beee;
+    border-bottom: 1px solid #a2a7d9;
+}
+
+div.group_panel {
+    border: 1px solid #e0e0e0;
+}
+
+div.group_panel_header {
+    background: #e3e3e3;
+    border-bottom: 1px solid #cdcdcd;
 }
 
 
@@ -23,7 +81,7 @@ div.colour_scheme_panel_body {
 }
 
 .editor_card_toolbar button {
-    padding: 7px;
+    /*padding: 7px;*/
 }
 
 .after_editor_card_toolbar {
@@ -60,6 +118,10 @@ input.unsaved {
     background-color: #ffe0e0;
 }
 
+input.colour_input {
+    width: 5em;
+}
+
 
 table.colour_scheme_table {
     border: 1px solid #c0c0c0;
@@ -86,4 +148,5 @@ table.colour_scheme_table tbody td {
 table.colour_scheme_table td {
     padding: 1px 5px;
 }
+
 
