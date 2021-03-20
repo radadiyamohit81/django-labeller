@@ -1,7 +1,14 @@
 import json
+import re
+from django.db import transaction
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from . import models
+
+
+_INT_REGEX = re.compile(r'[\d]+')
+_UUID_REGEX = re.compile(r'\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b')
+
 
 def _reorder(models, src_model, idx_dst):
     ids = [model.id for model in models]
@@ -13,6 +20,13 @@ def _reorder(models, src_model, idx_dst):
             model.order_index = i
             model.save()
 
+
+def update_model_from_js(model, model_attr_name, value, save=False):
+    if getattr(model, model_attr_name) != value:
+        setattr(model, model_attr_name, value)
+        return True
+    else:
+        return save or False
 
 def update_label_classes(request):
     if request.method == 'POST':
@@ -121,6 +135,84 @@ def update_label_classes(request):
                         model.save()
 
             return JsonResponse({'status': 'success'})
+        elif action == 'update_colour_schemes':
+            colour_schemes_js = params.get('colour_schemes')
+            id_mapping = {}
+            with transaction.atomic():
+                for group_js in colour_schemes_js:
+                    if isinstance(group_js['id'], str) and _UUID_REGEX.fullmatch(group_js['id']) is not None:
+                        # New colour scheme
+                        scheme_model = models.LabellingColourScheme(
+                            id_name=group_js['name'], human_name=group_js['human_name'], active=group_js['active'])
+                        scheme_model.save()
+                        id_mapping[group_js['id']] = scheme_model.id
+                    elif isinstance(group_js['id'], int):
+                        scheme_model = models.LabellingColourScheme.objects.get(id=group_js['id'])
+                        save = update_model_from_js(scheme_model, 'human_name', group_js['human_name'])
+                        save = update_model_from_js(scheme_model, 'active', group_js['active'], save)
+                        if save:
+                            scheme_model.save()
+            return JsonResponse({'status': 'success', 'id_mapping': id_mapping})
+        elif action == 'update_label_class_groups':
+            groups_js = params.get('groups')
+            group_id_mapping = {}
+            label_class_id_mapping = {}
+            with transaction.atomic():
+                for group_i, group_js in enumerate(groups_js):
+                    if isinstance(group_js['id'], str) and _UUID_REGEX.fullmatch(group_js['id']) is not None:
+                        # New colour scheme
+                        group_model = models.LabelClassGroup(
+                            human_name=group_js['group_name'], active=group_js['active'], order_index=group_i)
+                        group_model.save()
+                        group_id_mapping[group_js['id']] = group_model.id
+                    elif isinstance(group_js['id'], int):
+                        group_model = models.LabelClassGroup.objects.get(id=group_js['id'])
+                        save = update_model_from_js(group_model, 'order_index', group_i)
+                        save = update_model_from_js(group_model, 'human_name', group_js['group_name'], save)
+                        save = update_model_from_js(group_model, 'active', group_js['active'], save)
+                        if save:
+                            group_model.save()
+                    else:
+                        raise ValueError
+
+                    for lcls_i, lcls_js in enumerate(group_js['group_classes']):
+                        if isinstance(lcls_js['id'], str) and _UUID_REGEX.fullmatch(lcls_js['id']) is not None:
+                            # New colour scheme
+                            lcls_model = models.LabelClass(
+                                group=group_model, id_name=lcls_js['name'], active=lcls_js['active'], order_index=lcls_i,
+                                human_name=lcls_js['human_name'], default_colour=lcls_js['colours']['default']['html'])
+                            lcls_model.save()
+                            label_class_id_mapping[lcls_js['id']] = lcls_model.id
+                        elif isinstance(lcls_js['id'], int):
+                            lcls_model = models.LabelClass.objects.get(id=lcls_js['id'])
+                            save = update_model_from_js(lcls_model, 'order_index', lcls_i)
+                            save = update_model_from_js(lcls_model, 'group', group_model, save)
+                            save = update_model_from_js(lcls_model, 'active', lcls_js['active'], save)
+                            save = update_model_from_js(lcls_model, 'human_name', lcls_js['human_name'], save)
+                            save = update_model_from_js(lcls_model, 'default_colour', lcls_js['colours']['default']['html'], save)
+                            if save:
+                                lcls_model.save()
+                        else:
+                            raise ValueError
+
+                        for col_scheme_name, col_js in lcls_js['colours'].items():
+                            if col_scheme_name != 'default':
+                                col_models = models.LabelClassColour.objects.filter(
+                                    label_class=lcls_model, scheme__id_name=col_scheme_name)
+                                if col_models.exists():
+                                    col_model = col_models.first()
+                                    save = update_model_from_js(col_model, 'colour', col_js['html'])
+                                    if save:
+                                        col_model.save()
+                                else:
+                                    scheme_models = models.LabellingColourScheme.objects.filter(id_name=col_scheme_name)
+                                    if scheme_models.exists():
+                                        col_model = models.LabelClassColour(
+                                            label_class=lcls_model, scheme=scheme_models.first(), colour=col_js['html'])
+                                    col_model.save()
+
+            return JsonResponse({'status': 'success', 'group_id_mapping': group_id_mapping,
+                                 'label_class_id_mapping': label_class_id_mapping})
     return JsonResponse({'status': 'failed'})
 
 

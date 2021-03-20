@@ -31,6 +31,9 @@ class LabellingColourScheme (models.Model):
     def json_for_schema_editor(self):
         return {'id': self.id, 'active': self.active, 'name': self.id_name, 'human_name': self.human_name}
 
+    def __str__(self):
+        return 'LabellingColourScheme({}, id={})'.format(self.id_name, self.human_name, self.id)
+
 
 class LabelClassGroup (models.Model):
     """
@@ -64,7 +67,7 @@ class LabelClassGroup (models.Model):
                 'group_classes': [x.json_for_schema_editor() for x in lab_classes]}
 
     def __str__(self):
-        return self.human_name
+        return 'LabelClassGroup({})'.format(self.human_name)
 
 
 class LabelClass (models.Model):
@@ -105,7 +108,8 @@ class LabelClass (models.Model):
                 'colours': colours}
 
     def __str__(self):
-        return '{}/{}'.format(self.group.human_name, self.human_name)
+        return 'LabelClass({}/{}, active={}, id={})'.format(
+            self.group.human_name, self.human_name, self.active, self.id)
 
     @staticmethod
     def html_colour_to_list(c):
@@ -128,6 +132,11 @@ class LabelClassColour (models.Model):
     label_class = models.ForeignKey(LabelClass, models.PROTECT, related_name='scheme_colours')
     scheme = models.ForeignKey(LabellingColourScheme, models.PROTECT, related_name='label_colours')
     colour = models.CharField(max_length=8, default='#0080ff')
+
+    def __str__(self):
+        return 'LabelClassColour(lcls={}/{}, scheme={})'.format(
+            self.label_class.group.human_name, self.label_class.human_name, self.scheme.human_name
+        )
 
 
 class LabelsLockedError (Exception):

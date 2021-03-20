@@ -25,16 +25,77 @@ Developed by Geoffrey French in collaboration with Dr. M. Fisher and
 Dr. M. Mackiewicz.
  */
 /// <reference path="../jquery.d.ts" />
+/// <reference path="../labelling_tool/object_id_table.ts" />
 
 declare var Vue: any;
 declare var vuedraggable: any;
 
 module schema_editor {
+    type DelayedFunction = () => void;
+
+    class DelayedFunctionTimeout {
+        private fn: DelayedFunction;
+        private timeout_id: number = null;
+        private enabled: boolean = true;
+
+        constructor(fn: DelayedFunction) {
+            this.fn = fn;
+        }
+
+        enqueue(interval: number) {
+            if (this.enabled) {
+                let self = this;
+                if (this.timeout_id !== null) {
+                    clearTimeout(this.timeout_id);
+                    this.timeout_id = null;
+                }
+                this.timeout_id = setTimeout(function() {
+                    self.fn();
+                    self.timeout_id = null;
+                }, interval);
+            }
+        }
+
+        enable() {
+            this.enabled = true;
+        }
+
+        disable() {
+            this.enabled = false;
+        }
+    }
+
+
     export class SchemaEditor {
         private update_url: string;
+        private col_scheme_updater: DelayedFunctionTimeout = null;
+        private cls_group_updater: DelayedFunctionTimeout = null;
+
+        private send_update(action: string, params: object, on_response: any) {
+            let self = this;
+
+            let post_data = {
+                action: action,
+                params: JSON.stringify(params)
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: self.update_url,
+                data: post_data,
+                success: function (msg) {
+                    if (on_response !== undefined && on_response !== null) {
+                        on_response(msg);
+                    }
+                },
+                dataType: 'json'
+            });
+        }
 
         constructor(update_url: string, colour_schemes_js: any[], groups_js: any[]) {
             let self = this;
+
+            this.update_url = update_url;
 
             const RootComponent = {
                 el: '#schema_editor',
@@ -45,12 +106,79 @@ module schema_editor {
                             groups: groups_js
                         }
                     }
+                },
+                created: function() {
+                    let root_app = this;
+                    self.col_scheme_updater = new DelayedFunctionTimeout(function() {
+                        let on_response = function(msg) {
+                            if (msg.status === 'success') {
+                                console.log('Colour scheme update successful');
+                                let id_mapping = msg.id_mapping;
+                                for (let scheme of root_app.schema.colour_schemes) {
+                                    if (id_mapping[scheme.id] !== undefined) {
+                                        console.log('Remapping colour scheme ID ' + scheme.id + ' to ' + id_mapping[scheme.id]);
+                                        scheme.id = id_mapping[scheme.id];
+                                    }
+                                }
+                            }
+                        };
+                        self.send_update(
+                            'update_colour_schemes',
+                            {colour_schemes: root_app.schema.colour_schemes},
+                            on_response);
+                    });
+                    self.cls_group_updater = new DelayedFunctionTimeout(function() {
+                        let on_response = function(msg) {
+                            if (msg.status === 'success') {
+                                console.log('Label classes update successful');
+                                let group_id_mapping = msg.group_id_mapping;
+                                let label_class_id_mapping = msg.label_class_id_mapping;
+                                for (let group of root_app.schema.groups) {
+                                    if (group_id_mapping[group.id] !== undefined) {
+                                        console.log('Remapping group ID ' + group.id + ' to ' + group_id_mapping[group.id]);
+                                        group.id = group_id_mapping[group.id];
+                                    }
+
+                                    for (let lcls of group.group_classes) {
+                                        if (label_class_id_mapping[lcls.id] !== undefined) {
+                                            console.log('Remapping label class ID ' + lcls.id + ' to ' + label_class_id_mapping[lcls.id]);
+                                            lcls.id = label_class_id_mapping[lcls.id];
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                        self.send_update(
+                            'update_label_class_groups',
+                            {groups: root_app.schema.groups},
+                            on_response);
+                    });
                 }
             };
 
             const app = Vue.createApp(RootComponent);
+            console.log(app);
 
+            // Register draggable component so we can use it in the templates
             app.component('draggable', vuedraggable);
+
+            // Update mixin
+            app.mixin({
+                methods: {
+                    queue_send_colour_scheme_update: function() {
+                        if (self.col_scheme_updater !== null) {
+                            self.col_scheme_updater.enqueue(2000);
+                        }
+                    },
+                    queue_send_label_class_groups_update: function() {
+                        if (self.cls_group_updater !== null) {
+                            self.cls_group_updater.enqueue(2000);
+                        }
+                    },
+                }
+            });
+
+
 
             /*
             Colour scheme component
@@ -79,6 +207,7 @@ module schema_editor {
                     on_create_new: function() {
                         if (this.new_form_data.name !== '') {
                             var scheme = {
+                                id: labelling_tool.ObjectIDTable.uuidv4(),
                                 active: true,
                                 name: this.new_form_data.name,
                                 human_name: this.new_form_data.human_name
@@ -91,7 +220,12 @@ module schema_editor {
                             this.schema.colour_schemes.push(scheme);
                         }
                         this.show_new_form = false;
-                    }
+                    },
+                },
+                created: function() {
+                    Vue.watch(this.schema.colour_schemes, (x, prev_x) => {
+                        this.queue_send_colour_scheme_update();
+                    });
                 }
             });
 
@@ -121,7 +255,7 @@ module schema_editor {
                     on_create_new: function() {
                         if (this.new_form_data.name !== '') {
                             var new_group = {
-                                id: null,
+                                id: labelling_tool.ObjectIDTable.uuidv4(),
                                 active: true,
                                 group_name: this.new_form_data.group_name,
                                 group_classes: [],
@@ -131,6 +265,11 @@ module schema_editor {
                         this.show_new_form = false;
                     },
                 },
+                created: function() {
+                    Vue.watch(this.schema.groups, (x, prev_x) => {
+                        this.queue_send_label_class_groups_update();
+                    });
+                }
             });
 
             /*
@@ -166,7 +305,7 @@ module schema_editor {
                             }
                             colours['default'] = {html: '#808080'};
                             var lcls = {
-                                id: null,
+                                id: labelling_tool.ObjectIDTable.uuidv4(),
                                 active: true,
                                 name: this.new_form_data.name,
                                 human_name: this.new_form_data.human_name,
@@ -176,8 +315,12 @@ module schema_editor {
                         }
                         this.show_new_form = false;
                     },
-
                 },
+                created: function() {
+                    Vue.watch(this.group, (x, prev_x) => {
+                        this.queue_send_label_class_groups_update();
+                    });
+                }
             });
 
             /*
@@ -186,26 +329,52 @@ module schema_editor {
             app.component('colour-editor', {
                 template: '#colour_editor_template',
                 props: {
-                    modelValue: String,
+                    colour_table: Object,
+                    scheme_name: String,
                 },
-                emits: ['update:modelValue'],
                 data: function() {
                     return {
-                        'value': '',
-                    };
+                        text_value: '',
+                        colour_value: ''
+                    }
                 },
+                emits: ['update:modelValue'],
                 methods: {
-                    on_input(e) {
+                    on_text_input(e) {
                         if (SchemaEditor.check_colour(e.target.value)) {
-                            this.$emit('update:modelValue', e.target.value);
+                            this.update(e.target.value);
                         }
                     },
-                    is_valid() {
-                        return SchemaEditor.check_colour(this.value);
+                    on_colour_input(e) {
+                        this.update(e.target.value);
+                    },
+                    update(colour) {
+                        if (this.colour_table.hasOwnProperty(this.scheme_name)) {
+                            this.colour_table[this.scheme_name].html = colour;
+                        }
+                        else {
+                            this.colour_table[this.scheme_name] = {html: colour};
+                        }
+                        this.colour_value = colour;
+                        this.text_value = colour;
+                    }
+                },
+                computed: {
+                    html_colour: function() {
+                        if (this.colour_table.hasOwnProperty(this.scheme_name)) {
+                            return this.colour_table[this.scheme_name].html as string;
+                        }
+                        else {
+                            return '#808080';
+                        }
+                    },
+                    is_text_valid: function() {
+                        return SchemaEditor.check_colour(this.text_value);
                     }
                 },
                 created: function() {
-                    this.value = this.modelValue;
+                    this.text_value = this.html_colour;
+                    this.colour_value = this.html_colour;
                 }
             });
 

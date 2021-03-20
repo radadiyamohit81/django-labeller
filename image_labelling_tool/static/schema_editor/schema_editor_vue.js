@@ -25,11 +25,42 @@ Developed by Geoffrey French in collaboration with Dr. M. Fisher and
 Dr. M. Mackiewicz.
  */
 /// <reference path="../jquery.d.ts" />
+/// <reference path="../labelling_tool/object_id_table.ts" />
 var schema_editor;
 (function (schema_editor) {
+    var DelayedFunctionTimeout = /** @class */ (function () {
+        function DelayedFunctionTimeout(fn) {
+            this.timeout_id = null;
+            this.enabled = true;
+            this.fn = fn;
+        }
+        DelayedFunctionTimeout.prototype.enqueue = function (interval) {
+            if (this.enabled) {
+                var self_1 = this;
+                if (this.timeout_id !== null) {
+                    clearTimeout(this.timeout_id);
+                    this.timeout_id = null;
+                }
+                this.timeout_id = setTimeout(function () {
+                    self_1.fn();
+                    self_1.timeout_id = null;
+                }, interval);
+            }
+        };
+        DelayedFunctionTimeout.prototype.enable = function () {
+            this.enabled = true;
+        };
+        DelayedFunctionTimeout.prototype.disable = function () {
+            this.enabled = false;
+        };
+        return DelayedFunctionTimeout;
+    }());
     var SchemaEditor = /** @class */ (function () {
         function SchemaEditor(update_url, colour_schemes_js, groups_js) {
+            this.col_scheme_updater = null;
+            this.cls_group_updater = null;
             var self = this;
+            this.update_url = update_url;
             var RootComponent = {
                 el: '#schema_editor',
                 data: function () {
@@ -39,10 +70,70 @@ var schema_editor;
                             groups: groups_js
                         }
                     };
+                },
+                created: function () {
+                    var root_app = this;
+                    self.col_scheme_updater = new DelayedFunctionTimeout(function () {
+                        var on_response = function (msg) {
+                            if (msg.status === 'success') {
+                                console.log('Colour scheme update successful');
+                                var id_mapping = msg.id_mapping;
+                                for (var _i = 0, _a = root_app.schema.colour_schemes; _i < _a.length; _i++) {
+                                    var scheme = _a[_i];
+                                    if (id_mapping[scheme.id] !== undefined) {
+                                        console.log('Remapping colour scheme ID ' + scheme.id + ' to ' + id_mapping[scheme.id]);
+                                        scheme.id = id_mapping[scheme.id];
+                                    }
+                                }
+                            }
+                        };
+                        self.send_update('update_colour_schemes', { colour_schemes: root_app.schema.colour_schemes }, on_response);
+                    });
+                    self.cls_group_updater = new DelayedFunctionTimeout(function () {
+                        var on_response = function (msg) {
+                            if (msg.status === 'success') {
+                                console.log('Label classes update successful');
+                                var group_id_mapping = msg.group_id_mapping;
+                                var label_class_id_mapping = msg.label_class_id_mapping;
+                                for (var _i = 0, _a = root_app.schema.groups; _i < _a.length; _i++) {
+                                    var group = _a[_i];
+                                    if (group_id_mapping[group.id] !== undefined) {
+                                        console.log('Remapping group ID ' + group.id + ' to ' + group_id_mapping[group.id]);
+                                        group.id = group_id_mapping[group.id];
+                                    }
+                                    for (var _b = 0, _c = group.group_classes; _b < _c.length; _b++) {
+                                        var lcls = _c[_b];
+                                        if (label_class_id_mapping[lcls.id] !== undefined) {
+                                            console.log('Remapping label class ID ' + lcls.id + ' to ' + label_class_id_mapping[lcls.id]);
+                                            lcls.id = label_class_id_mapping[lcls.id];
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                        self.send_update('update_label_class_groups', { groups: root_app.schema.groups }, on_response);
+                    });
                 }
             };
             var app = Vue.createApp(RootComponent);
+            console.log(app);
+            // Register draggable component so we can use it in the templates
             app.component('draggable', vuedraggable);
+            // Update mixin
+            app.mixin({
+                methods: {
+                    queue_send_colour_scheme_update: function () {
+                        if (self.col_scheme_updater !== null) {
+                            self.col_scheme_updater.enqueue(2000);
+                        }
+                    },
+                    queue_send_label_class_groups_update: function () {
+                        if (self.cls_group_updater !== null) {
+                            self.cls_group_updater.enqueue(2000);
+                        }
+                    },
+                }
+            });
             /*
             Colour scheme component
              */
@@ -70,6 +161,7 @@ var schema_editor;
                     on_create_new: function () {
                         if (this.new_form_data.name !== '') {
                             var scheme = {
+                                id: labelling_tool.ObjectIDTable.uuidv4(),
                                 active: true,
                                 name: this.new_form_data.name,
                                 human_name: this.new_form_data.human_name
@@ -84,7 +176,13 @@ var schema_editor;
                             this.schema.colour_schemes.push(scheme);
                         }
                         this.show_new_form = false;
-                    }
+                    },
+                },
+                created: function () {
+                    var _this = this;
+                    Vue.watch(this.schema.colour_schemes, function (x, prev_x) {
+                        _this.queue_send_colour_scheme_update();
+                    });
                 }
             });
             /*
@@ -113,7 +211,7 @@ var schema_editor;
                     on_create_new: function () {
                         if (this.new_form_data.name !== '') {
                             var new_group = {
-                                id: null,
+                                id: labelling_tool.ObjectIDTable.uuidv4(),
                                 active: true,
                                 group_name: this.new_form_data.group_name,
                                 group_classes: [],
@@ -123,6 +221,12 @@ var schema_editor;
                         this.show_new_form = false;
                     },
                 },
+                created: function () {
+                    var _this = this;
+                    Vue.watch(this.schema.groups, function (x, prev_x) {
+                        _this.queue_send_label_class_groups_update();
+                    });
+                }
             });
             /*
             Label class group template
@@ -158,7 +262,7 @@ var schema_editor;
                             }
                             colours['default'] = { html: '#808080' };
                             var lcls = {
-                                id: null,
+                                id: labelling_tool.ObjectIDTable.uuidv4(),
                                 active: true,
                                 name: this.new_form_data.name,
                                 human_name: this.new_form_data.human_name,
@@ -169,6 +273,12 @@ var schema_editor;
                         this.show_new_form = false;
                     },
                 },
+                created: function () {
+                    var _this = this;
+                    Vue.watch(this.group, function (x, prev_x) {
+                        _this.queue_send_label_class_groups_update();
+                    });
+                }
             });
             /*
             Colour editor text entry
@@ -176,26 +286,52 @@ var schema_editor;
             app.component('colour-editor', {
                 template: '#colour_editor_template',
                 props: {
-                    modelValue: String,
+                    colour_table: Object,
+                    scheme_name: String,
                 },
-                emits: ['update:modelValue'],
                 data: function () {
                     return {
-                        'value': '',
+                        text_value: '',
+                        colour_value: ''
                     };
                 },
+                emits: ['update:modelValue'],
                 methods: {
-                    on_input: function (e) {
+                    on_text_input: function (e) {
                         if (SchemaEditor.check_colour(e.target.value)) {
-                            this.$emit('update:modelValue', e.target.value);
+                            this.update(e.target.value);
                         }
                     },
-                    is_valid: function () {
-                        return SchemaEditor.check_colour(this.value);
+                    on_colour_input: function (e) {
+                        this.update(e.target.value);
+                    },
+                    update: function (colour) {
+                        if (this.colour_table.hasOwnProperty(this.scheme_name)) {
+                            this.colour_table[this.scheme_name].html = colour;
+                        }
+                        else {
+                            this.colour_table[this.scheme_name] = { html: colour };
+                        }
+                        this.colour_value = colour;
+                        this.text_value = colour;
+                    }
+                },
+                computed: {
+                    html_colour: function () {
+                        if (this.colour_table.hasOwnProperty(this.scheme_name)) {
+                            return this.colour_table[this.scheme_name].html;
+                        }
+                        else {
+                            return '#808080';
+                        }
+                    },
+                    is_text_valid: function () {
+                        return SchemaEditor.check_colour(this.text_value);
                     }
                 },
                 created: function () {
-                    this.value = this.modelValue;
+                    this.text_value = this.html_colour;
+                    this.colour_value = this.html_colour;
                 }
             });
             /*
@@ -203,6 +339,24 @@ var schema_editor;
              */
             var vm = app.mount('#schema_editor');
         }
+        SchemaEditor.prototype.send_update = function (action, params, on_response) {
+            var self = this;
+            var post_data = {
+                action: action,
+                params: JSON.stringify(params)
+            };
+            $.ajax({
+                type: 'POST',
+                url: self.update_url,
+                data: post_data,
+                success: function (msg) {
+                    if (on_response !== undefined && on_response !== null) {
+                        on_response(msg);
+                    }
+                },
+                dataType: 'json'
+            });
+        };
         SchemaEditor.check_colour = function (col) {
             var match = SchemaEditor.colour_regex.exec(col);
             if (match !== null) {

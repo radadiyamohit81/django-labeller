@@ -145,12 +145,10 @@
                                 <input class="input_lcls_name" type="text" v-model="element.human_name"/>
                             </td>
                             <td class="lcls_colour" data-colour-scheme="default">
-                                <input class="input_lcls_colour_picker" type='color' v-model="element.colours.default.html"/>
-                                <colour-editor v-model="element.colours.default.html"></colour-editor>
+                                <colour-editor :colour_table="element.colours" scheme_name="default"></colour-editor>
                             </td>
                             <td v-for="scheme in schema.colour_schemes" class="lcls_colour" v-bind:data-colour-scheme="scheme.name">
-                                <input class="input_lcls_colour_picker" type='color' v-model="element.colours[scheme.name].html"/>
-                                <colour-editor v-model="element.colours[scheme.name].html"></colour-editor>
+                                <colour-editor :colour_table="element.colours" :scheme_name="scheme.name"></colour-editor>
                             </td>
                         </tr>
                     </template>
@@ -180,7 +178,8 @@
 
 
 <script type="text/x-template" id="colour_editor_template">
-    <input class="input_lcls_colour_text colour_input small" type='text' v-model="value" @input="on_input($event)" v-bind:class="{'input_error': !is_valid()}"/>
+    <input class="input_lcls_colour_picker" type='color' v-model="colour_value" @input="on_colour_input($event)"/>
+    <input class="input_lcls_colour_text colour_input small" type='text' v-model="text_value" @input="on_text_input($event)" v-bind:class="{'input_error': !is_text_valid}"/>
 </script>
 
 {% endverbatim %}
