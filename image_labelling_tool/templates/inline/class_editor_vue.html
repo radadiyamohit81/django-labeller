@@ -1,0 +1,186 @@
+{% load class_editor_tags %}
+
+<script>
+    $(document).ready(function() {
+        new schema_editor.SchemaEditor(
+            "{{update_url}}",
+            {{ colour_schemes | as_json | safe }},
+            {{ groups | as_json | safe }}
+        );
+    });
+</script>
+
+{% verbatim %}
+
+<!-- Schema editor app !-->
+<div id="schema_editor">
+    <colour-schemes :schema="schema"></colour-schemes>
+    <all-label-classes :schema="schema"></all-label-classes>
+</div>
+
+<!-- Colour schemes component !-->
+<script type="text/x-template" id="colour_schemes_template">
+    <div class="schema_panel colour_scheme_panel shadow">
+        <div class="scheme_panel_header colour_scheme_panel_header shadow-sm">Colour schemes</div>
+        <div class="scheme_panel_body">
+            <div class="editor_card_toolbar">
+                <button class="new_colour_scheme_button btn btn-warning btn-sm shadow" v-on:click="on_new()" :disabled="show_new_form">New</button>
+            </div>
+
+            <table class="colour_scheme_table after_editor_card_toolbar shadow">
+                <thead>
+                    <tr>
+                        <td></td>
+                        <td>Enabled</td>
+                        <td>Name</td>
+                        <td>Name in UI</td>
+                    </tr>
+                </thead>
+                <draggable group="colour_schemes" v-model="schema.colour_schemes" item-key="name" tag="tbody">
+                    <template #item="{ element }">
+                        <tr class="colour_scheme_row" v-bind:data-scheme-id="element.id">
+                            <td>
+                                <span class="oi oi-menu"></span>
+                            </td>
+                            <td>
+                                <input class="input_lcls_active" type="checkbox" v-model="element.active"/>
+                            </td>
+                            <td>{{ element.name }}</td>
+                            <td>
+                                <input class="input_lcls_name" type="text" v-model="element.human_name"/>
+                            </td>
+                        </tr>
+                    </template>
+                </draggable>
+            </table>
+            <div v-if="show_new_form" class="form_container shadow">
+                <h6 class="text-primary">Create new colour scheme</h6>
+                <div class="form-group row">
+                    <label for="name" class="col-2 col-form-label">Name (identifier)</label>
+                    <div class="col-4"><input type="text" name="name" class="form-control text ui-widget-content ui-corner-all" v-model="new_form_data.name"/></div>
+                </div>
+                <div class="form-group row">
+                    <label for="human_name" class="col-2 col-form-label">Name in UI</label>
+                    <div class="col-4"><input type="text" name="human_name" class="form-control text ui-widget-content ui-corner-all" v-model="new_form_data.human_name"/></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-4"></div>
+                    <div class="col-1"><button class="new_colour_scheme_button btn btn-secondary btn-sm shadow" v-on:click="on_cancel_new()">Cancel</button></div>
+                    <div class="col-1"><button class="new_colour_scheme_button btn btn-success btn-sm shadow" v-on:click="on_create_new()" :disabled="new_form_data.name === ''">Create</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+
+<script type="text/x-template" id="all_label_classes_template">
+    <div class="group_container schema_panel classes_panel shadow">
+        <div class="scheme_panel_header classes_panel_header shadow-sm">Label classes by group</div>
+        <div class="scheme_panel_body">
+            <draggable group="label_class_groups" v-model="schema.groups" item-key="id">
+                <template #item="{ element }">
+                    <label-class-group :group="element" :schema="schema"></label-class-group>
+                </template>
+            </draggable>
+
+            <p><button id="new_label_class_group_button" class="btn btn-primary btn-sm shadow" v-on:click="on_new()">New label group</button></p>
+
+            <div v-if="show_new_form" class="form_container shadow">
+                <h6 class="text-primary">Create new group</h6>
+                <div class="form-group row">
+                    <label for="human_name" class="col-2 col-form-label">Group name</label>
+                    <div class="col-4"><input type="text" name="human_name" class="form-control text ui-widget-content ui-corner-all" v-model="new_form_data.group_name"/></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-4"></div>
+                    <div class="col-1"><button class="new_colour_scheme_button btn btn-secondary btn-sm shadow" v-on:click="on_cancel_new()">Cancel</button></div>
+                    <div class="col-1"><button class="new_colour_scheme_button btn btn-success btn-sm shadow" v-on:click="on_create_new()" :disabled="new_form_data.group_name === ''">Create</button></div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</script>
+
+
+<script type="text/x-template" id="label_class_group_template">
+    <div class="schema_sub_panel group_panel shadow-sm" v-bind:data-group-id="group.id">
+
+        <div class="scheme_sub_panel_header group_panel_header shadow-sm" v-bind:class="{'text-muted': !group.active}">
+            <span class="oi oi-menu"></span> Group:
+            <input class="input_group_name" type="text" v-model="group.group_name" v-bind:class="{'text-muted': !group.active}"/>
+            <input class="input_group_active" type="checkbox" v-model="group.active"/> Enabled
+        </div>
+
+        <div class="scheme_panel_body">
+
+            <div class="editor_card_toolbar">
+                <button class="new_label_class_button btn btn-success btn-sm shadow" v-on:click="on_new()">New</button>
+            </div>
+
+            <table class="class_labels_table after_editor_card_toolbar shadow">
+                <thead>
+                    <tr>
+                        <td></td>
+                        <td>Enabled</td>
+                        <td>Name</td>
+                        <td>Name in UI</td>
+                        <td>Default colour</td>
+                        <td v-for="scheme in schema.colour_schemes">{{ scheme.human_name }}</td>
+                    </tr>
+                </thead>
+                <draggable group="label_classes" v-model="group.group_classes" item-key="id" tag="tbody">
+                    <template #item="{ element }">
+                        <tr class="lcls_row" data-lcls-id="{{ element.id }}">
+                            <td>
+                                <span class="oi oi-menu"></span>
+                            </td>
+                            <td>
+                                <input class="input_lcls_active" type="checkbox" v-model="element.active"/>
+                            </td>
+                            <td>{{ element.name }}</td>
+                            <td>
+                                <input class="input_lcls_name" type="text" v-model="element.human_name"/>
+                            </td>
+                            <td class="lcls_colour" data-colour-scheme="default">
+                                <input class="input_lcls_colour_picker" type='color' v-model="element.colours.default.html"/>
+                                <colour-editor v-model="element.colours.default.html"></colour-editor>
+                            </td>
+                            <td v-for="scheme in schema.colour_schemes" class="lcls_colour" v-bind:data-colour-scheme="scheme.name">
+                                <input class="input_lcls_colour_picker" type='color' v-model="element.colours[scheme.name].html"/>
+                                <colour-editor v-model="element.colours[scheme.name].html"></colour-editor>
+                            </td>
+                        </tr>
+                    </template>
+                </draggable>
+            </table>
+
+            <div v-if="show_new_form" class="form_container shadow">
+                <h6 class="text-primary">Create new label class</h6>
+                <div class="form-group row">
+                    <label for="name" class="col-2 col-form-label">Name (identifier)</label>
+                    <div class="col-4"><input type="text" name="name" class="form-control text ui-widget-content ui-corner-all" v-model="new_form_data.name"/></div>
+                </div>
+                <div class="form-group row">
+                    <label for="human_name" class="col-2 col-form-label">Name in UI</label>
+                    <div class="col-4"><input type="text" name="human_name" class="form-control text ui-widget-content ui-corner-all" v-model="new_form_data.human_name"/></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-4"></div>
+                    <div class="col-1"><button class="new_colour_scheme_button btn btn-secondary btn-sm shadow" v-on:click="on_cancel_new()">Cancel</button></div>
+                    <div class="col-1"><button class="new_colour_scheme_button btn btn-success btn-sm shadow" v-on:click="on_create_new()" :disabled="new_form_data.name === ''">Create</button></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</script>
+
+
+<script type="text/x-template" id="colour_editor_template">
+    <input class="input_lcls_colour_text colour_input small" type='text' v-model="value" @input="on_input($event)" v-bind:class="{'input_error': !is_valid()}"/>
+</script>
+
+{% endverbatim %}

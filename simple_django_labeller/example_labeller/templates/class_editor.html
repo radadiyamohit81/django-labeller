@@ -1,4 +1,5 @@
 {% load class_editor_tags %}
+{% load labelling_tool_tags %}
 
 <!doctype html>
 <html lang="en">
@@ -51,7 +52,7 @@
             {% url 'example_labeller:class_editor_update' as update_url %}
             {% url 'example_labeller:class_editor_form' as form_url %}
 
-            {% class_editor colour_schemes groups update_url form_url class_editor_url %}
+            {% class_editor_vue colour_schemes groups update_url form_url class_editor_url %}
         </div>
 
     </body>

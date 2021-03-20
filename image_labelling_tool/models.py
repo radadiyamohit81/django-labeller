@@ -28,6 +28,9 @@ class LabellingColourScheme (models.Model):
     human_name = models.CharField(max_length=64, default='', verbose_name='Name of colour scheme as shown in UI')
     active = models.BooleanField(default=True)
 
+    def json_for_schema_editor(self):
+        return {'id': self.id, 'active': self.active, 'name': self.id_name, 'human_name': self.human_name}
+
 
 class LabelClassGroup (models.Model):
     """
@@ -52,6 +55,13 @@ class LabelClassGroup (models.Model):
         lab_classes = self.label_classes.filter(active=True).order_by('order_index', 'id')
         return {'group_name': self.human_name,
                 'group_classes': [x.json_for_labelling_tool() for x in lab_classes]}
+
+    def json_for_schema_editor(self):
+        lab_classes = self.label_classes.filter(active=True).order_by('order_index', 'id')
+        return {'id': self.id,
+                'active': self.active,
+                'group_name': self.human_name,
+                'group_classes': [x.json_for_schema_editor() for x in lab_classes]}
 
     def __str__(self):
         return self.human_name
@@ -80,9 +90,19 @@ class LabelClass (models.Model):
 
     def json_for_labelling_tool(self):
         colours = {cls_col.scheme.id_name: self.html_colour_to_list(cls_col.colour)
-                   for cls_col in self.scheme_colours}
+                   for cls_col in self.scheme_colours.all()}
         colours['default'] = self.html_colour_to_list(self.default_colour)
         return {'name': self.id_name, 'human_name': self.human_name, 'colours': colours}
+
+    def json_for_schema_editor(self):
+        colours = {cls_col.scheme.id_name: self.json_colour(cls_col.colour)
+                   for cls_col in self.scheme_colours.all()}
+        colours['default'] = self.json_colour(self.default_colour)
+        return {'id': self.id,
+                'active': self.active,
+                'name': self.id_name,
+                'human_name': self.human_name,
+                'colours': colours}
 
     def __str__(self):
         return '{}/{}'.format(self.group.human_name, self.human_name)
@@ -98,6 +118,10 @@ class LabelClass (models.Model):
     @staticmethod
     def list_to_html_colour(c):
         return '#{:02x}{:02x}{:02x}'.format(c[0], c[1], c[2])
+
+    @staticmethod
+    def json_colour(c):
+        return {'html': c}
 
 
 class LabelClassColour (models.Model):

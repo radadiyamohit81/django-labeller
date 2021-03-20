@@ -1,33 +1,6 @@
-/*
-The MIT License (MIT)
-
-Copyright (c) 2015 University of East Anglia, Norwich, UK
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-Developed by Geoffrey French in collaboration with Dr. M. Fisher and
-Dr. M. Mackiewicz.
- */
-/// <reference path="../jquery.d.ts" />
 var schema_editor;
 (function (schema_editor) {
-    var LabelClassEditor = /** @class */ (function () {
+    var LabelClassEditor = (function () {
         function LabelClassEditor(update_url) {
             var self = this;
             self.update_url = update_url;
@@ -72,9 +45,6 @@ var schema_editor;
                     }
                 });
             }
-            //
-            // EDIT GROUPS
-            //
             var input_group_active = $(".input_group_active");
             input_group_active.change(function () {
                 var card_body = $(this).closest('div.card-body');
@@ -112,9 +82,6 @@ var schema_editor;
                     elem.removeClass('unsaved');
                 });
             });
-            //
-            // EDIT LABEL CLASSES
-            //
             var input_lcls_active = $(".input_lcls_active");
             input_lcls_active.change(function () {
                 var lcls_row = $(this).closest('.lcls_row');
@@ -141,9 +108,6 @@ var schema_editor;
                     elem.removeClass('unsaved');
                 });
             });
-            //
-            // Colour
-            //
             var input_lcls_colour_picker = $(".input_lcls_colour_picker");
             for (var i = 0; i < input_lcls_colour_picker.length; i++) {
                 var elem = $(input_lcls_colour_picker[i]);
@@ -199,9 +163,6 @@ var schema_editor;
                     });
                 }
             });
-            //
-            // Species ID colour
-            //
             var input_lcls_specid_colour_picker = $(".input_lcls_specid_colour_picker");
             for (var i = 0; i < input_lcls_specid_colour_picker.length; i++) {
                 var elem = $(input_lcls_specid_colour_picker[i]);
@@ -247,7 +208,6 @@ var schema_editor;
                     });
                 }
             });
-            // New label class button
             var new_label_class_button = $(".new_label_class_button");
             new_label_class_button.on("click", function () {
                 var group_panel = $(this).closest(".group_panel");

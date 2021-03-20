@@ -25,6 +25,7 @@ Sub-panels
 div.schema_sub_panel {
     border-radius: 0.25em;
     /*box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;*/
+    margin-bottom: 0.75em;
 }
 
 div.scheme_sub_panel_header {
@@ -74,6 +75,19 @@ div.group_panel_header {
     border-bottom: 1px solid #cdcdcd;
 }
 
+div.controls_container {
+    margin-top: 0.75em;
+    margin-bottom: 0.25em;
+}
+
+div.form_container {
+    margin-top: 0.75em;
+    margin-bottom: 0.25em;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.25em;
+    padding: 0.5em;
+}
+
 
 
 .editor_card_toolbar {
@@ -116,6 +130,11 @@ table.class_labels_table td {
 
 input.unsaved {
     background-color: #ffe0e0;
+}
+
+input.input_error {
+    background-color: #fff0f0;
+    color: #ff0000;
 }
 
 input.colour_input {

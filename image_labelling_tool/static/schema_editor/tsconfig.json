@@ -7,6 +7,6 @@
         "sourceMap": true
     },
     "files": [
-        "label_class_editor_old.ts"
+        "label_class_editor.ts"
     ]
 }
